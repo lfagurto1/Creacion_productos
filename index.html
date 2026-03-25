@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creación de Productos CRESIO</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cresioRed: '#FF3B1F',
+            cresioViolet: '#49267F',
+            cresioBlue: '#D9E0E8',
+            cresioInk: '#1E334D'
+          },
+          boxShadow: {
+            soft: '0 10px 35px rgba(30,51,77,.08)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #c6d0db; border-radius: 999px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #eef2f7; }
+    .search-option[hidden] { display: none !important; }
+    .tab-btn-active { background: #49267F; color: white; border-color: #49267F; }
+    .page-hidden { display: none !important; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+  <div class="min-h-screen">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 backdrop-blur">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="flex items-start sm:items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-cresioRed/10 flex items-center justify-center border border-cresioRed/20 shrink-0">
+            <div class="w-8 h-8 rounded-xl bg-cresioRed"></div>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-cresioInk">Generador de Productos</h1>
+            <p class="text-sm text-slate-500">Plantilla segura para carga masiva con catálogos e ID externos</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="btnExport" class="px-4 py-2 rounded-xl bg-cresioViolet text-white font-semibold hover:opacity-95 transition">Descargar Excel</button>
+          <button id="btnResetAll" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition">Reiniciar registros</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <section class="bg-white rounded-3xl shadow-soft border border-slate-200 p-4 sm:p-5">
+        <div class="flex flex-wrap gap-3">
+          <button id="tabConfig" class="tab-btn px-4 py-2 rounded-xl border border-slate-300 font-semibold transition">1. Plantilla base y Campos con ID externo</button>
+          <button id="tabWork" class="tab-btn px-4 py-2 rounded-xl border border-slate-300 font-semibold transition">2. Ingreso de productos y Registros listos para exportar</button>
+        </div>
+      </section>
+
+      <div id="pageConfig" class="space-y-6">
+      <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="xl:col-span-2 bg-white rounded-3xl shadow-soft border border-slate-200 p-5 sm:p-6">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+            <div>
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cresioBlue text-cresioInk text-xs font-bold tracking-wide uppercase">Configuración</div>
+              <h2 class="mt-3 text-xl font-bold text-cresioInk">1. Plantilla base</h2>
+              <p class="text-sm text-slate-500 mt-1">La app ya viene precargada con la estructura de tu plantilla actual. Si en el futuro cambia, puedes volver a subir el Excel para reemplazar la estructura.</p>
+            </div>
+            <div class="min-w-[260px]">
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Subir nueva plantilla</label>
+              <input id="templateFile" type="file" accept=".xlsx,.xls" class="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-cresioRed file:text-white file:font-semibold hover:file:opacity-95" />
+              <p id="templateStatus" class="mt-2 text-xs text-slate-500">Usando estructura precargada.</p>
+            </div>
+          </div>
+
+          <div class="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Columnas de salida</p>
+              <p id="kpiTotalColumns" class="mt-2 text-2xl font-bold text-cresioInk">0</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Campos editables</p>
+              <p id="kpiEditableFields" class="mt-2 text-2xl font-bold text-cresioInk">0</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Campos con catálogo</p>
+              <p id="kpiCatalogFields" class="mt-2 text-2xl font-bold text-cresioInk">0</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Registros cargados</p>
+              <p id="kpiRows" class="mt-2 text-2xl font-bold text-cresioInk">0</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-cresioRed via-cresioViolet to-cresioInk rounded-3xl shadow-soft text-white p-6">
+          <h3 class="text-lg font-bold">Cómo funciona</h3>
+          <ol class="mt-4 space-y-3 text-sm leading-6 list-decimal list-inside text-white/90">
+            <li>Sube o actualiza la plantilla si cambia su estructura.</li>
+            <li>Sube los catálogos de cada campo con dos columnas: <strong>Nombre</strong> e <strong>ID externo</strong>.</li>
+            <li>Llena el formulario de producto.</li>
+            <li>Revisa la vista previa y descarga el Excel final.</li>
+          </ol>
+          <div class="mt-6 rounded-2xl bg-white/10 p-4 border border-white/10">
+            <p class="text-xs uppercase tracking-wide font-bold text-white/70">Formato esperado de catálogos</p>
+            <p class="mt-2 text-sm">La mayoría de catálogos usa 2 columnas: <strong>Nombre</strong> e <strong>ID externo</strong>. El catálogo de categoría del producto también puede venir con 4 columnas, incluyendo la categoría POS.</p>
+            <div class="mt-3 grid grid-cols-2 gap-2 text-xs font-semibold">
+              <div class="rounded-xl bg-white/10 px-3 py-2">Nombre</div>
+              <div class="rounded-xl bg-white/10 px-3 py-2">ID externo</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-3xl shadow-soft border border-slate-200 p-5 sm:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cresioBlue text-cresioInk text-xs font-bold tracking-wide uppercase">Catálogos</div>
+            <h2 class="mt-3 text-xl font-bold text-cresioInk">2. Campos con ID externo</h2>
+            <p class="text-sm text-slate-500 mt-1">Aquí subes una sola vez los Excel que contienen la equivalencia <strong>Nombre visible → ID externo</strong>. Quedan guardados en este navegador y cuando subas una actualización se fusionan sin borrar lo anterior. En <strong>Categoría del producto</strong> también se toma automáticamente la categoría POS y su ID externo desde el mismo archivo.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="btnExportConfig" class="px-4 py-2 rounded-xl border border-cresioViolet text-cresioViolet font-semibold hover:bg-cresioViolet/5 transition">Exportar respaldo</button>
+            <label class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition cursor-pointer">
+              Importar respaldo
+              <input id="backupFile" type="file" accept=".json" class="hidden" />
+            </label>
+            <button id="btnClearCatalogs" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition">Borrar catálogos</button>
+          </div>
+        </div>
+
+        <div id="catalogGrid" class="mt-6 grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4"></div>
+      </section>
+
+      </div>
+
+      <div id="pageWork" class="space-y-6 page-hidden">
+      <section class="bg-white rounded-3xl shadow-soft border border-slate-200 p-5 sm:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cresioBlue text-cresioInk text-xs font-bold tracking-wide uppercase">Formulario</div>
+            <h2 class="mt-3 text-xl font-bold text-cresioInk">3. Ingreso de productos</h2>
+            <p class="text-sm text-slate-500 mt-1">Los campos fijos y automáticos se completan solos. Solo llenas lo necesario.</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="btnClearForm" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition">Limpiar formulario</button>
+            <button id="btnAddRow" class="px-4 py-2 rounded-xl bg-cresioRed text-white font-semibold hover:opacity-95 transition">Agregar producto</button>
+          </div>
+        </div>
+
+        <div id="formSections" class="mt-6 space-y-6"></div>
+      </section>
+
+      <section class="bg-white rounded-3xl shadow-soft border border-slate-200 p-5 sm:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cresioBlue text-cresioInk text-xs font-bold tracking-wide uppercase">Vista previa</div>
+            <h2 class="mt-3 text-xl font-bold text-cresioInk">4. Registros listos para exportar</h2>
+            <p class="text-sm text-slate-500 mt-1">Puedes revisar la versión visible y la versión técnica con IDs externos.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="btnToggleTech" class="px-4 py-2 rounded-xl border border-cresioViolet text-cresioViolet font-semibold hover:bg-cresioViolet/5 transition">Ver columnas técnicas</button>
+          </div>
+        </div>
+
+        <div class="mt-5 overflow-auto rounded-2xl border border-slate-200 scrollbar-thin">
+          <table class="min-w-full text-sm">
+            <thead id="previewHead" class="bg-slate-50"></thead>
+            <tbody id="previewBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </section>
+      </div>
+    </main>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  const STORAGE_KEYS = {
+    template: 'cresio_template_v3',
+    catalogs: 'cresio_catalogs_v3',
+    catalogMeta: 'cresio_catalog_meta_v3',
+    rows: 'cresio_rows_v3',
+    draft: 'cresio_draft_v3',
+    ui: 'cresio_ui_v3'
+  };
+
+  // ==============================
+  // CONFIGURACIÓN PRE-CARGADA
+  // Basada en la plantilla subida por el usuario.
+  // ==============================
+  const DEFAULT_TEMPLATE = {
+    headers: [
+      "single_name","/Marca_No","/Marca/ID externo","Código de barras","Código de barras alterno","Nombre Ecommerce","_.Unidad_de_medida_No","Unidad de medida/ID externo","UdM_de_compra_No","UdM de compra/ID externo","/Product Type_NO.","Product Type/ID externo","Registro sanitario","Fecha vencimiento","Precio (PVF)","Precio (PVP+IVA)","Precio (PVP Unidad)","Precio PVX (Unidad)","Precio de venta","Precio PVX (Fracción)","Línea de laboratorio/Nombre_No","Línea de laboratorio/ID externo","/_.Presentación_No","Presentación/ID externo","Temperatura/Nombre_No","Temperatura/ID externo","Código SA","/Tipos de Incentivo_No","Tipos de incentivos/ID","/Concentración_No","Concentración/ID externo","/Principio activo_No","Principio activo/ID externo","/Forma farmacéutica_No","Forma farmacéutica/ID externo","/Vía administración_No","Vía administración/ID externo","Medicamento crónico","/Fiscalización_No","Fiscalización/ID externo","Requiere Médico/Receta",".IVA_No","_..Impuestos del cliente/Nombre del impuesto_No","Impuestos del cliente/ID externo","_..Impuestos de proveedor/Nombre del impuesto_No","Impuestos de proveedor/ID externo","_.Centro de Costo/Nombre_No","Centro de Costo/ID externo","_.Cuenta de ingresos/Nombre de la cuenta_No","Cuenta de ingresos/ID externo","_.Cuenta de gastos/Nombre de la cuenta_No","Cuenta de gastos/ID externo","Tipo de producto","Política de facturación","Seguimiento","Auto crear lote","Referencia Anterior","Costo","Último precio venta","Último precio compra","Estado de Producto","Peso","Ancho (cm)","Largo (cm)","Altura (cm)","._Categoría del producto/Nombre completo","Categoría del producto/ID externo","/Categoría del POS (Pdv)/Nombre de categoría","Categoría del Punto de venta/ID externo","Disponible en PdV","Se puede vender","Se puede comprar","Medicación continua","Producto genérico","Recomendación única","Auto update","Política de control","Categoría ARCSA"
+    ],
+    instructions: [
+      "manualmente","manualmente","Automatico toma información del campo","manualmente","manualmente","manualmente","Campo seleccionable","Automatico toma información del campo","manual","Automatico toma información del campo","Campo seleccionable","Automatico toma información del campo","manual","manual","manual","manual","Se calcula a partir del Precio (PVP+IVA) y .IVA_No","Se calcula a partir del Precio (PVP Unidad)","Se calcula a partir del Precio (PVP Unidad) y la UdM_de_compra_No","Se calcula a partir del Precio PVX (Unidad) y la UdM_de_compra_No","campo seleccionable, debe tener buscador","Automatico toma información del campo","manual y seleccionable con un buscador","Automatico toma información del campo","seleccionable","Automatico toma información del campo","manual",null,"fijo en formato texto","campo seleccionable y debe de tener buscador","Automatico toma información del campo","campo seleccionable y debe de tener buscador","Automatico toma información del campo","campo seleccionable y debe de tener buscador","Automatico toma información del campo","campo seleccionable y debe de tener buscador","Automatico toma información del campo","seleccionable Sí o No","seleccionable","Automatico toma información del campo","seleccionable Sí o No","seleccionabel puse 1 para el 0% y 1.15 para el 15% ","automatico parte del impuesto","automatico parte del impuesto","automatico parte del impuesto","automatico parte del impuesto","seleccionable y debe tener buscador","Automatico toma información del campo","automatico parte del impuesto","automatico parte del impuesto","automatico parte del impuesto","automatico parte del impuesto","seleccionable (Servicio / Producto almacenable)","campo fijo","campo fijo","campo fijo","campo fijo","campo fijo","campo fijo","campo fijo","seleccionable y con buscador","campo fijo","campo fijo","campo fijo","campo fijo","manual","Automatico toma información del campo","Automatico toma información del campo ._Categoría del producto/Nombre completo","Automatico toma información del campo","campo fijo","campo fijo","campo fijo","campo fijo","seleccionable Sí o No","seleccionable Sí o No","campo fijo","campo fijo","manual"
+    ],
+    fixedDefaults: {
+      "Tipos de incentivos/ID": "4,20",
+      "Política de facturación": "Cantidad ordenada",
+      "Seguimiento": "Por lotes",
+      "Auto crear lote": true,
+      "Referencia Anterior": 0,
+      "Costo": 0,
+      "Último precio venta": 0,
+      "Último precio compra": 0,
+      "Peso": 0,
+      "Ancho (cm)": 0,
+      "Largo (cm)": 0,
+      "Altura (cm)": 0,
+      "Disponible en PdV": true,
+      "Se puede vender": true,
+      "Se puede comprar": true,
+      "Medicación continua": "No",
+      "Auto update": false,
+      "Política de control": "Sobre cantidades pedidas"
+    }
+  };
+
+  const YES_NO_OPTIONS = ['Sí', 'No'];
+  const PRODUCT_TYPE_OPTIONS = ['Servicio', 'Producto almacenable'];
+  const IVA_OPTIONS = [
+    { label: '0%', value: '1' },
+    { label: '15%', value: '1.15' }
+  ];
+
+
+  const EXPORT_HEADERS = [
+    'single_name','Marca/ID externo','Código de barras','Código de barras alterno','Nombre Ecommerce','Unidad de medida/ID externo','UdM de compra/ID externo','Product Type/ID externo','Registro sanitario','Fecha vencimiento','Precio (PVF)','Precio (PVP+IVA)','Precio (PVP Unidad)','Precio PVX (Unidad)','Precio de venta','Precio PVX (Fracción)','Línea de laboratorio/ID externo','Presentación/ID externo','Temperatura/ID externo','Código SA','Tipos de incentivos/ID','Concentración/ID externo','Principio activo/ID externo','Forma farmacéutica/ID externo','Vía administración/ID externo','Medicamento crónico','Fiscalización/ID externo','Requiere Médico/Receta','IVA','Impuestos del cliente/ID externo','Impuestos de proveedor/ID externo','Centro de Costo/ID externo','Cuenta de ingresos/ID externo','Cuenta de gastos/ID externo','Tipo de producto','Política de facturación','Seguimiento','Auto crear lote','Referencia Anterior','Costo','Último precio venta','Último precio compra','Estado de Producto','Peso','Ancho (cm)','Largo (cm)','Altura (cm)','Categoría del producto/ID externo','Categoría del Punto de venta/ID externo','Disponible en PdV','Se puede vender','Se puede comprar','Medicación continua','Producto genérico','Recomendación única','Auto update','Política de control','Categoría ARCSA'
+  ];
+
+  const EXPORT_HEADER_MAP = {
+    'Marca/ID externo': '/Marca/ID externo',
+    'Unidad de medida/ID externo': 'Unidad de medida/ID externo',
+    'UdM de compra/ID externo': 'UdM de compra/ID externo',
+    'Product Type/ID externo': 'Product Type/ID externo',
+    'Línea de laboratorio/ID externo': 'Línea de laboratorio/ID externo',
+    'Presentación/ID externo': 'Presentación/ID externo',
+    'Temperatura/ID externo': 'Temperatura/ID externo',
+    'Tipos de incentivos/ID': 'Tipos de incentivos/ID',
+    'Concentración/ID externo': 'Concentración/ID externo',
+    'Principio activo/ID externo': 'Principio activo/ID externo',
+    'Forma farmacéutica/ID externo': 'Forma farmacéutica/ID externo',
+    'Vía administración/ID externo': 'Vía administración/ID externo',
+    'Fiscalización/ID externo': 'Fiscalización/ID externo',
+    'IVA': '.IVA_No',
+    'Impuestos del cliente/ID externo': 'Impuestos del cliente/ID externo',
+    'Impuestos de proveedor/ID externo': 'Impuestos de proveedor/ID externo',
+    'Centro de Costo/ID externo': 'Centro de Costo/ID externo',
+    'Cuenta de ingresos/ID externo': 'Cuenta de ingresos/ID externo',
+    'Cuenta de gastos/ID externo': 'Cuenta de gastos/ID externo',
+    'Categoría del producto/ID externo': 'Categoría del producto/ID externo',
+    'Categoría del Punto de venta/ID externo': 'Categoría del Punto de venta/ID externo'
+  };
+
+  function getExportValue(record, exportHeader) {
+    const internalHeader = EXPORT_HEADER_MAP[exportHeader] || exportHeader;
+    return record.technical?.[internalHeader] ?? record.visible?.[internalHeader] ?? '';
+  }
+
+  const TAX_RULES = {
+    '1': {
+      clientName: 'IVA 0% (411, A)',
+      clientId: 'account.1_tax_vat_413',
+      supplierName: 'IVA 0% (510, 05 Inv Grab 0)',
+      supplierId: 'account.1_tax_vat_517_sup_07',
+      incomeAccountName: 'Ventas bienes gravadas con tarifa cero',
+      incomeAccountId: '__export__.account_account_1168_5af01dcf',
+      expenseAccountName: 'Cxp proveedores de inventario en transito',
+      expenseAccountId: '__export__.account_account_1073_b9bedda6'
+    },
+    '1.15': {
+      clientName: 'IVA 15% (411, B)',
+      clientId: 'account.1_tax_vat_15_411_goods',
+      supplierName: 'IVA 15% (510, 06 Inv Créd)',
+      supplierId: 'account.1_tax_vat_15_510_sup_06',
+      incomeAccountName: 'Ventas bienes gravadas con tarifa diferente de cero',
+      incomeAccountId: '__export__.account_account_1167_ccdfd6c0',
+      expenseAccountName: 'Cxp proveedores de inventario en transito',
+      expenseAccountId: '__export__.account_account_1073_b9bedda6'
+    }
+  };
+
+  const FRIENDLY_LABELS = {
+    'single_name': 'Nombre interno del producto',
+    '/Marca_No': 'Marca',
+    'Código de barras': 'Código de barras',
+    'Código de barras alterno': 'Código de barras alterno',
+    'Nombre Ecommerce': 'Nombre Ecommerce',
+    '_.Unidad_de_medida_No': 'Unidad de medida',
+    'UdM_de_compra_No': 'UdM de compra',
+    '/Product Type_NO.': 'Product Type',
+    'Registro sanitario': 'Registro sanitario',
+    'Fecha vencimiento': 'Fecha vencimiento',
+    'Precio (PVF)': 'Precio PVF',
+    'Precio (PVP+IVA)': 'Precio PVP + IVA',
+    'Línea de laboratorio/Nombre_No': 'Línea de laboratorio',
+    '/_.Presentación_No': 'Presentación',
+    'Temperatura/Nombre_No': 'Temperatura',
+    'Código SA': 'Código SA',
+    '/Concentración_No': 'Concentración',
+    '/Principio activo_No': 'Principio activo',
+    '/Forma farmacéutica_No': 'Forma farmacéutica',
+    '/Vía administración_No': 'Vía administración',
+    'Medicamento crónico': 'Medicamento crónico',
+    '/Fiscalización_No': 'Fiscalización',
+    'Requiere Médico/Receta': 'Requiere Médico / Receta',
+    '.IVA_No': 'IVA',
+    '_.Centro de Costo/Nombre_No': 'Centro de costo',
+    'Tipo de producto': 'Tipo de producto',
+    'Estado de Producto': 'Estado de Producto',
+    '._Categoría del producto/Nombre completo': 'Categoría del producto (nombre completo)',
+    '/Categoría del POS (Pdv)/Nombre de categoría': 'Categoría POS',
+    'Producto genérico': 'Producto genérico',
+    'Recomendación única': 'Recomendación única',
+    'Categoría ARCSA': 'Categoría ARCSA'
+  };
+
+
+
+  const ARCSA_OPTIONS = [
+    'COSMETICOS',
+    'MEDICAMENTOS',
+    'Por definir',
+    'ALIMENTOS',
+    'PRODUCTOS NATURALES',
+    'MEDICAMENTOS HOMEOPATICOS',
+    'DISPOSITIVOS MEDICOS Y REACTIVOS QUIMICOS',
+    'PRODUCTOS HIGIENICOS',
+    'NO REQUIERE',
+    'AGROCALIDAD',
+    'PLASTICOS'
+  ];
+
+  const SECTION_MAP = {
+    basics: {
+      title: 'Datos generales',
+      fields: ['single_name','/Marca_No','Código de barras','Código de barras alterno','Nombre Ecommerce','Registro sanitario','Fecha vencimiento','Categoría ARCSA']
+    },
+    sale: {
+      title: 'Precios y unidades',
+      fields: ['_.Unidad_de_medida_No','UdM_de_compra_No','/Product Type_NO.','Precio (PVF)','Precio (PVP+IVA)','Tipo de producto']
+    },
+    pharma: {
+      title: 'Información farmacéutica',
+      fields: ['Línea de laboratorio/Nombre_No','/_.Presentación_No','Temperatura/Nombre_No','Código SA','/Concentración_No','/Principio activo_No','/Forma farmacéutica_No','/Vía administración_No','Medicamento crónico','/Fiscalización_No','Requiere Médico/Receta','.IVA_No']
+    },
+    accounting: {
+      title: 'Cuentas y estructura',
+      fields: ['_.Centro de Costo/Nombre_No','Estado de Producto','._Categoría del producto/Nombre completo','Producto genérico','Recomendación única']
+    }
+  };
+
+  let state = {
+    template: null,
+    fieldMeta: [],
+    catalogs: {},
+    catalogMeta: {},
+    rows: [],
+    draft: {},
+    activePage: 'config',
+    showTechColumns: false
+  };
+
+  const el = {
+    templateFile: document.getElementById('templateFile'),
+    templateStatus: document.getElementById('templateStatus'),
+    catalogGrid: document.getElementById('catalogGrid'),
+    formSections: document.getElementById('formSections'),
+    previewHead: document.getElementById('previewHead'),
+    previewBody: document.getElementById('previewBody'),
+    btnAddRow: document.getElementById('btnAddRow'),
+    btnClearForm: document.getElementById('btnClearForm'),
+    btnToggleTech: document.getElementById('btnToggleTech'),
+    btnExport: document.getElementById('btnExport'),
+    btnResetAll: document.getElementById('btnResetAll'),
+    btnExportConfig: document.getElementById('btnExportConfig'),
+    backupFile: document.getElementById('backupFile'),
+    btnClearCatalogs: document.getElementById('btnClearCatalogs'),
+    tabConfig: document.getElementById('tabConfig'),
+    tabWork: document.getElementById('tabWork'),
+    pageConfig: document.getElementById('pageConfig'),
+    pageWork: document.getElementById('pageWork'),
+    kpiTotalColumns: document.getElementById('kpiTotalColumns'),
+    kpiEditableFields: document.getElementById('kpiEditableFields'),
+    kpiCatalogFields: document.getElementById('kpiCatalogFields'),
+    kpiRows: document.getElementById('kpiRows')
+  };
+
+  function normalizeText(value) {
+    return String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toUpperCase();
+  }
+
+  function slugify(value) {
+    return normalizeText(value)
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  function sanitizeText(value) {
+    return String(value ?? '').replace(/[<>]/g, '').trim();
+  }
+
+  function numberOrNull(value) {
+    if (value === '' || value === null || value === undefined) return null;
+    const clean = String(value).replace(',', '.').trim();
+    const num = Number(clean);
+    return Number.isFinite(num) ? num : null;
+  }
+
+  function round6(num) {
+    return Number(Math.round((num + Number.EPSILON) * 1_000_000) / 1_000_000);
+  }
+
+  function formatDateTime(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('es-EC', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function loadFromStorage() {
+    const storedTemplate = localStorage.getItem(STORAGE_KEYS.template);
+    const storedCatalogs = localStorage.getItem(STORAGE_KEYS.catalogs);
+    const storedCatalogMeta = localStorage.getItem(STORAGE_KEYS.catalogMeta);
+    const storedRows = localStorage.getItem(STORAGE_KEYS.rows);
+    const storedDraft = localStorage.getItem(STORAGE_KEYS.draft);
+    const storedUi = localStorage.getItem(STORAGE_KEYS.ui);
+
+    state.template = storedTemplate ? JSON.parse(storedTemplate) : structuredClone(DEFAULT_TEMPLATE);
+    state.catalogs = storedCatalogs ? JSON.parse(storedCatalogs) : {};
+    state.catalogMeta = storedCatalogMeta ? JSON.parse(storedCatalogMeta) : {};
+    state.rows = storedRows ? JSON.parse(storedRows) : [];
+    state.draft = storedDraft ? JSON.parse(storedDraft) : {};
+    if (storedUi) {
+      const ui = JSON.parse(storedUi);
+      state.activePage = ui.activePage || 'config';
+      state.showTechColumns = !!ui.showTechColumns;
+    }
+    rebuildTemplateMeta();
+  }
+
+  function saveTemplate() {
+    localStorage.setItem(STORAGE_KEYS.template, JSON.stringify(state.template));
+  }
+
+  function saveCatalogs() {
+    localStorage.setItem(STORAGE_KEYS.catalogs, JSON.stringify(state.catalogs));
+    localStorage.setItem(STORAGE_KEYS.catalogMeta, JSON.stringify(state.catalogMeta));
+  }
+
+  function saveRows() {
+    localStorage.setItem(STORAGE_KEYS.rows, JSON.stringify(state.rows));
+  }
+
+  function saveDraft() {
+    localStorage.setItem(STORAGE_KEYS.draft, JSON.stringify(state.draft));
+  }
+
+  function saveUiState() {
+    localStorage.setItem(STORAGE_KEYS.ui, JSON.stringify({
+      activePage: state.activePage,
+      showTechColumns: state.showTechColumns
+    }));
+  }
+
+  function switchPage(page) {
+    state.activePage = page;
+    saveUiState();
+    const isConfig = page === 'config';
+    el.pageConfig.classList.toggle('page-hidden', !isConfig);
+    el.pageWork.classList.toggle('page-hidden', isConfig);
+    el.tabConfig.classList.toggle('tab-btn-active', isConfig);
+    el.tabWork.classList.toggle('tab-btn-active', !isConfig);
+  }
+
+
+  function detectFieldType(header, instruction) {
+    const text = normalizeText(instruction || '');
+    if (header.includes('/ID externo') || header.includes('ID externo') || text.includes('AUTOMATICO')) return 'auto';
+    if (text.includes('CAMPO FIJO') || text.includes('FIJO')) return 'fixed';
+    if (text.includes('SE CALCULA')) return 'calculated';
+    if (text.includes('SELECCIONABLE') || header.includes('_No') || header.includes('/Nombre')) return 'select';
+    return 'manual';
+  }
+
+  function isBooleanLikeField(header) {
+    return ['Medicamento crónico','Requiere Médico/Receta','Producto genérico','Recomendación única'].includes(header);
+  }
+
+  function getCatalogSourceHeader(idHeader) {
+    const map = {
+      '/Marca/ID externo': '/Marca_No',
+      'Unidad de medida/ID externo': '_.Unidad_de_medida_No',
+      'UdM de compra/ID externo': 'UdM_de_compra_No',
+      'Product Type/ID externo': '/Product Type_NO.',
+      'Línea de laboratorio/ID externo': 'Línea de laboratorio/Nombre_No',
+      'Presentación/ID externo': '/_.Presentación_No',
+      'Temperatura/ID externo': 'Temperatura/Nombre_No',
+      'Concentración/ID externo': '/Concentración_No',
+      'Principio activo/ID externo': '/Principio activo_No',
+      'Forma farmacéutica/ID externo': '/Forma farmacéutica_No',
+      'Vía administración/ID externo': '/Vía administración_No',
+      'Fiscalización/ID externo': '/Fiscalización_No',
+      'Impuestos del cliente/ID externo': '_..Impuestos del cliente/Nombre del impuesto_No',
+      'Impuestos de proveedor/ID externo': '_..Impuestos de proveedor/Nombre del impuesto_No',
+      'Centro de Costo/ID externo': '_.Centro de Costo/Nombre_No',
+      'Cuenta de ingresos/ID externo': '_.Cuenta de ingresos/Nombre de la cuenta_No',
+      'Cuenta de gastos/ID externo': '_.Cuenta de gastos/Nombre de la cuenta_No',
+      'Categoría del producto/ID externo': '._Categoría del producto/Nombre completo',
+      'Categoría del Punto de venta/ID externo': '/Categoría del POS (Pdv)/Nombre de categoría'
+    };
+    return map[idHeader] || null;
+  }
+
+  function rebuildTemplateMeta() {
+    state.fieldMeta = state.template.headers.map((header, index) => {
+      const instruction = state.template.instructions[index] || '';
+      const type = detectFieldType(header, instruction);
+      const sourceHeader = type === 'auto' ? getCatalogSourceHeader(header) : null;
+      return {
+        header,
+        instruction,
+        type,
+        sourceHeader,
+        label: FRIENDLY_LABELS[header] || header,
+        editable: ['manual', 'select'].includes(type),
+        fixedDefault: Object.prototype.hasOwnProperty.call(state.template.fixedDefaults, header)
+          ? state.template.fixedDefaults[header]
+          : null
+      };
+    });
+  }
+
+  function getEditableFields() {
+    return state.fieldMeta.filter(f => f.editable && f.header !== '/Categoría del POS (Pdv)/Nombre de categoría');
+  }
+
+  function getCatalogFields() {
+    const manualCatalogFields = [
+      '/Marca_No','_.Unidad_de_medida_No','UdM_de_compra_No','/Product Type_NO.','Línea de laboratorio/Nombre_No','/_.Presentación_No','Temperatura/Nombre_No','/Concentración_No','/Principio activo_No','/Forma farmacéutica_No','/Vía administración_No','/Fiscalización_No','_.Centro de Costo/Nombre_No','Estado de Producto','._Categoría del producto/Nombre completo'
+    ];
+    return manualCatalogFields.map(header => {
+      const meta = state.fieldMeta.find(f => f.header === header);
+      return {
+        header,
+        label: meta ? meta.label : header,
+        hasCatalog: !!state.catalogs[header]?.length,
+        rows: state.catalogs[header]?.length || 0
+      };
+    });
+  }
+
+  function updateKpis() {
+    el.kpiTotalColumns.textContent = state.template.headers.length;
+    el.kpiEditableFields.textContent = getEditableFields().length;
+    el.kpiCatalogFields.textContent = getCatalogFields().length;
+    el.kpiRows.textContent = state.rows.length;
+  }
+
+  function buildCatalogGrid() {
+    const catalogFields = getCatalogFields();
+    el.catalogGrid.innerHTML = '';
+
+    catalogFields.forEach(field => {
+      const wrapper = document.createElement('div');
+      const meta = state.catalogMeta[field.header] || {};
+      const updatedText = meta.updatedAt ? formatDateTime(meta.updatedAt) : 'Sin historial';
+      wrapper.className = 'rounded-2xl border border-slate-200 p-4 bg-slate-50';
+      wrapper.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-sm font-bold text-cresioInk">${escapeHtml(field.label)}</p>
+            <p class="text-xs text-slate-500 mt-1 break-all">${escapeHtml(field.header)}</p>
+            <p class="text-[11px] text-slate-400 mt-1">Última actualización: ${escapeHtml(updatedText)}</p>
+          </div>
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${field.hasCatalog ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+            ${field.hasCatalog ? `${field.rows} registros` : 'Sin catálogo'}
+          </span>
+        </div>
+        <div class="mt-4 space-y-3">
+          <input type="file" accept=".xlsx,.xls,.csv" data-catalog-input="${escapeAttribute(field.header)}" class="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-cresioViolet file:text-white file:font-semibold hover:file:opacity-95" />
+          <div class="flex flex-wrap gap-2">
+            <button data-view-catalog="${escapeAttribute(field.header)}" class="px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-100">Ver</button>
+            <button data-delete-catalog="${escapeAttribute(field.header)}" class="px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold hover:bg-rose-100">Borrar</button>
+          </div>
+        </div>
+      `;
+      el.catalogGrid.appendChild(wrapper);
+    });
+
+    document.querySelectorAll('[data-catalog-input]').forEach(input => {
+      input.addEventListener('change', handleCatalogUpload);
+    });
+
+    document.querySelectorAll('[data-view-catalog]').forEach(button => {
+      button.addEventListener('click', () => showCatalogPreview(button.getAttribute('data-view-catalog')));
+    });
+
+    document.querySelectorAll('[data-delete-catalog]').forEach(button => {
+      button.addEventListener('click', () => deleteCatalog(button.getAttribute('data-delete-catalog')));
+    });
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function escapeAttribute(value) {
+    return escapeHtml(value).replace(/"/g, '&quot;');
+  }
+
+  function buildForm() {
+    el.formSections.innerHTML = '';
+    Object.values(SECTION_MAP).forEach(section => {
+      const card = document.createElement('div');
+      card.className = 'rounded-2xl border border-slate-200 overflow-hidden';
+      const fieldsHtml = section.fields.map(header => renderField(header)).join('');
+      card.innerHTML = `
+        <div class="px-5 py-4 bg-slate-50 border-b border-slate-200">
+          <h3 class="font-bold text-cresioInk">${escapeHtml(section.title)}</h3>
+        </div>
+        <div class="p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          ${fieldsHtml}
+        </div>
+      `;
+      el.formSections.appendChild(card);
+    });
+
+    attachFieldEvents();
+  }
+
+  function renderField(header) {
+    if (header === '/Categoría del POS (Pdv)/Nombre de categoría') return '';
+    const meta = state.fieldMeta.find(f => f.header === header);
+    if (!meta) return '';
+    const id = `fld_${slugify(header)}`;
+    const baseClass = 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-cresioViolet/25 focus:border-cresioViolet';
+    const label = meta.label;
+    const requiredMark = `<span data-required-mark="${escapeAttribute(header)}" class="text-cresioRed ${getRequiredHeaders().includes(header) ? '' : 'hidden'}">*</span>`;
+
+    if (header === '.IVA_No') {
+      return `
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">${label} ${requiredMark}</label>
+          <select id="${id}" data-header="${escapeAttribute(header)}" class="${baseClass}">
+            <option value="">Seleccione</option>
+            ${IVA_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+
+    if (header === 'Tipo de producto') {
+      return `
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">${label} ${requiredMark}</label>
+          <select id="${id}" data-header="${escapeAttribute(header)}" class="${baseClass}">
+            <option value="">Seleccione</option>
+            ${PRODUCT_TYPE_OPTIONS.map(o => `<option value="${o}">${o}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+
+    if (isBooleanLikeField(header)) {
+      return `
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">${label} ${requiredMark}</label>
+          <select id="${id}" data-header="${escapeAttribute(header)}" class="${baseClass}">
+            <option value="">Seleccione</option>
+            ${YES_NO_OPTIONS.map(o => `<option value="${o}">${o}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+
+    if (header === 'Categoría ARCSA') {
+      return `
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">${label} ${requiredMark}</label>
+          <select id="${id}" data-header="${escapeAttribute(header)}" class="${baseClass}">
+            <option value="">Seleccione</option>
+            ${ARCSA_OPTIONS.map(o => `<option value="${o}">${o}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+
+    const catalogRows = state.catalogs[header] || [];
+    if (catalogRows.length) {
+      const searchableHeaders = ['._Categoría del producto/Nombre completo','Línea de laboratorio/Nombre_No','/_.Presentación_No','/Concentración_No','/Principio activo_No','/Forma farmacéutica_No','/Vía administración_No','_.Centro de Costo/Nombre_No','/Marca_No'];
+      const useDatalistSearch = searchableHeaders.includes(header) || catalogRows.length > 50;
+      if (useDatalistSearch) {
+        return `
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">${label} ${requiredMark}</label>
+            <input id="${id}" data-header="${escapeAttribute(header)}" list="${id}_list" class="${baseClass}" placeholder="Buscar y seleccionar" autocomplete="off" />
+            <datalist id="${id}_list">
+              ${catalogRows.map(row => `<option value="${escapeAttribute(row.name)}"></option>`).join('')}
+            </datalist>
+          </div>`;
+      }
+
+      return `
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">${label} ${requiredMark}</label>
+          <select id="${id}" data-header="${escapeAttribute(header)}" class="${baseClass}">
+            <option value="">Seleccione</option>
+            ${catalogRows.map(row => `<option value="${escapeAttribute(row.name)}">${escapeHtml(row.name)}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+
+    const inputType = header === 'Fecha vencimiento' ? 'date' : (['Precio (PVF)','Precio (PVP+IVA)','UdM_de_compra_No'].includes(header) ? 'number' : 'text');
+    const step = ['Precio (PVF)','Precio (PVP+IVA)','UdM_de_compra_No'].includes(header) ? 'step="0.000001"' : '';
+
+    return `
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">${label} ${requiredMark}</label>
+        <input id="${id}" data-header="${escapeAttribute(header)}" type="${inputType}" ${step} class="${baseClass}" placeholder="${escapeAttribute(label)}" />
+      </div>`;
+  }
+
+  function populateFormDraft() {
+    getEditableFields().forEach(field => {
+      const node = document.querySelector(`[data-header="${cssEscape(field.header)}"]`);
+      if (!node) return;
+      const draftValue = state.draft[field.header];
+      if (draftValue === undefined || draftValue === null) return;
+      node.value = draftValue;
+    });
+  }
+
+  function attachFieldEvents() {
+    const productTypeField = document.querySelector(`[data-header="${cssEscape('/Product Type_NO.')}"]`);
+    if (productTypeField) {
+      productTypeField.addEventListener('change', refreshRequiredIndicators);
+      productTypeField.addEventListener('input', refreshRequiredIndicators);
+    }
+
+    document.querySelectorAll('[data-header]').forEach(node => {
+      node.addEventListener('input', () => {
+        const header = node.getAttribute('data-header');
+        state.draft[header] = node.value;
+        saveDraft();
+      });
+      node.addEventListener('change', () => {
+        const header = node.getAttribute('data-header');
+        state.draft[header] = node.value;
+        saveDraft();
+      });
+    });
+
+    populateFormDraft();
+    refreshRequiredIndicators();
+  }
+
+  function getRequiredHeaders(productTypeValue = '') {
+    const baseRequired = [
+      'single_name','/Marca_No','Código de barras','Nombre Ecommerce','_.Unidad_de_medida_No','UdM_de_compra_No','/Product Type_NO.','Registro sanitario','Fecha vencimiento','Precio (PVF)','Precio (PVP+IVA)','Línea de laboratorio/Nombre_No','/_.Presentación_No','Temperatura/Nombre_No','/Concentración_No','/Principio activo_No','/Forma farmacéutica_No','/Vía administración_No','Medicamento crónico','/Fiscalización_No','Requiere Médico/Receta','.IVA_No','_.Centro de Costo/Nombre_No','Tipo de producto','Estado de Producto','._Categoría del producto/Nombre completo','Producto genérico','Recomendación única','Categoría ARCSA'
+    ];
+
+    const normalizedProductType = normalizeText(productTypeValue);
+    if (normalizedProductType === 'CONSUMO/HOSPITALARIOS') {
+      return baseRequired.filter(header => !['/Principio activo_No','/Forma farmacéutica_No','/Concentración_No'].includes(header));
+    }
+
+    return baseRequired;
+  }
+
+  function refreshRequiredIndicators() {
+    const currentProductType = getFieldValue('/Product Type_NO.');
+    const requiredHeaders = new Set(getRequiredHeaders(currentProductType));
+    document.querySelectorAll('[data-required-mark]').forEach(mark => {
+      const header = mark.getAttribute('data-required-mark');
+      mark.classList.toggle('hidden', !requiredHeaders.has(header));
+    });
+  }
+
+  function getFieldValue(header) {
+    const node = document.querySelector(`[data-header="${cssEscape(header)}"]`);
+    if (!node) return '';
+    if (node.type === 'number') return node.value === '' ? '' : String(node.value).replace(',', '.');
+    return sanitizeText(node.value);
+  }
+
+  function setFieldValue(header, value) {
+    const node = document.querySelector(`[data-header="${cssEscape(header)}"]`);
+    if (!node) return;
+    node.value = value ?? '';
+  }
+
+  function clearForm() {
+    getEditableFields().forEach(field => {
+      setFieldValue(field.header, '');
+      delete state.draft[field.header];
+    });
+    saveDraft();
+    refreshRequiredIndicators();
+  }
+
+  function cssEscape(value) {
+    return String(value).replace(/([ #;?%&,.+*~\':"!^$\[\]()=>|\/])/g,'\\$1');
+  }
+
+  async function readWorkbook(file) {
+    const data = await file.arrayBuffer();
+    return XLSX.read(data, { type: 'array' });
+  }
+
+  function worksheetToJsonRows(sheet) {
+    return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+  }
+
+  async function handleTemplateUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const workbook = await readWorkbook(file);
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = worksheetToJsonRows(firstSheet);
+      if (rows.length < 2) throw new Error('La plantilla debe tener al menos 2 filas.');
+
+      const headers = rows[1].map(v => sanitizeText(v));
+      const instructions = rows[0].map(v => sanitizeText(v));
+      if (!headers.length || headers.every(v => !v)) throw new Error('No se detectaron encabezados en la fila 2.');
+
+      state.template = {
+        headers,
+        instructions,
+        fixedDefaults: structuredClone(DEFAULT_TEMPLATE.fixedDefaults)
+      };
+      saveTemplate();
+      rebuildTemplateMeta();
+      buildCatalogGrid();
+      buildForm();
+      renderPreview();
+      updateKpis();
+      el.templateStatus.textContent = `Plantilla actualizada desde: ${file.name}`;
+
+      await Swal.fire({ icon: 'success', title: 'Plantilla cargada', text: 'La estructura de columnas fue actualizada correctamente.' });
+    } catch (error) {
+      await Swal.fire({ icon: 'error', title: 'No se pudo leer la plantilla', text: error.message || 'Revisa el archivo e inténtalo de nuevo.' });
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  function detectCatalogColumns(headerRow) {
+    let nameIndex = 0;
+    let idIndex = 1;
+
+    headerRow.forEach((value, index) => {
+      const text = normalizeText(value);
+      if (['NOMBRE','NAME','DESCRIPCION','DESCRIPCIÓN'].includes(text)) nameIndex = index;
+      if (text.includes('ID EXTERNO') || text === 'ID' || text === 'ID EXTERNO') idIndex = index;
+    });
+
+    return { nameIndex, idIndex };
+  }
+
+  function detectCategoryCatalogColumns(headerRow) {
+    const normalized = headerRow.map(value => normalizeText(value));
+    const productNameIndex = normalized.findIndex(v => v === normalizeText('Categoría del producto/Nombre completo'));
+    const productIdIndex = normalized.findIndex(v => v === normalizeText('Categoría del producto/ID externo'));
+    const posNameIndex = normalized.findIndex(v => v === normalizeText('Categoría de Punto de venta/Nombre completo'));
+    const posIdIndex = normalized.findIndex(v => v === normalizeText('Categoría de Punto de venta/ID externo'));
+    if ([productNameIndex, productIdIndex, posNameIndex, posIdIndex].every(v => v >= 0)) {
+      return { productNameIndex, productIdIndex, posNameIndex, posIdIndex };
+    }
+    return null;
+  }
+
+  function resolveProductCategoryRecord(productCategoryName) {
+    const catalog = state.catalogs['._Categoría del producto/Nombre completo'] || [];
+    if (!productCategoryName) return null;
+    return catalog.find(row => normalizeText(row.name) === normalizeText(productCategoryName)) || null;
+  }
+
+
+  async function handleCatalogUpload(event) {
+    const fieldHeader = event.target.getAttribute('data-catalog-input');
+    const file = event.target.files?.[0];
+    if (!fieldHeader || !file) return;
+
+    try {
+      const workbook = await readWorkbook(file);
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = worksheetToJsonRows(firstSheet).filter(row => row.some(cell => String(cell).trim() !== ''));
+      if (rows.length < 2) throw new Error('El catálogo debe tener al menos encabezado y una fila de datos.');
+
+      let parsed = [];
+      if (fieldHeader === '._Categoría del producto/Nombre completo') {
+        const indexes = detectCategoryCatalogColumns(rows[0]);
+        if (!indexes) throw new Error('El catálogo de Categoría del producto debe incluir estas 4 columnas: Categoría del producto/Nombre completo, Categoría del producto/ID externo, Categoría de Punto de venta/Nombre completo y Categoría de Punto de venta/ID externo.');
+        parsed = rows.slice(1)
+          .map(row => ({
+            name: sanitizeText(row[indexes.productNameIndex]),
+            externalId: sanitizeText(row[indexes.productIdIndex]),
+            posName: sanitizeText(row[indexes.posNameIndex]),
+            posExternalId: sanitizeText(row[indexes.posIdIndex])
+          }))
+          .filter(row => row.name && row.externalId);
+      } else {
+        const { nameIndex, idIndex } = detectCatalogColumns(rows[0]);
+        parsed = rows.slice(1)
+          .map(row => ({
+            name: sanitizeText(row[nameIndex]),
+            externalId: sanitizeText(row[idIndex])
+          }))
+          .filter(row => row.name && row.externalId);
+      }
+
+      if (!parsed.length) throw new Error('No se encontraron pares válidos Nombre / ID externo.');
+
+      const mergedMap = new Map();
+      (state.catalogs[fieldHeader] || []).forEach(row => {
+        const key = row.externalId ? `id::${normalizeText(row.externalId)}` : `name::${normalizeText(row.name)}`;
+        mergedMap.set(key, row);
+      });
+      let nuevos = 0;
+      parsed.forEach(row => {
+        const key = row.externalId ? `id::${normalizeText(row.externalId)}` : `name::${normalizeText(row.name)}`;
+        if (!mergedMap.has(key)) nuevos += 1;
+        mergedMap.set(key, row);
+      });
+      state.catalogs[fieldHeader] = Array.from(mergedMap.values())
+        .filter(row => row.name && row.externalId)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+      state.catalogMeta[fieldHeader] = {
+        updatedAt: new Date().toISOString(),
+        total: state.catalogs[fieldHeader].length,
+        sourceFile: file.name
+      };
+      saveCatalogs();
+      buildCatalogGrid();
+      buildForm();
+      updateKpis();
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Catálogo actualizado',
+        text: `${file.name}: ${nuevos} registros nuevos y ${state.catalogs[fieldHeader].length} registros totales para ${fieldHeader}.`
+      });
+    } catch (error) {
+      await Swal.fire({ icon: 'error', title: 'No se pudo cargar el catálogo', text: error.message || 'Revisa la estructura del archivo.' });
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  function showCatalogPreview(fieldHeader) {
+    const rows = state.catalogs[fieldHeader] || [];
+    if (!rows.length) {
+      Swal.fire({ icon: 'info', title: 'Sin catálogo', text: 'Todavía no has subido un archivo para este campo.' });
+      return;
+    }
+
+    const isCategoryProductCatalog = fieldHeader === '._Categoría del producto/Nombre completo';
+    const table = rows.slice(0, 150).map(row => `
+      <tr>
+        <td class="border border-slate-200 px-3 py-2">${escapeHtml(row.name)}</td>
+        <td class="border border-slate-200 px-3 py-2">${escapeHtml(row.externalId)}</td>
+        ${isCategoryProductCatalog ? `<td class="border border-slate-200 px-3 py-2">${escapeHtml(row.posName || '')}</td><td class="border border-slate-200 px-3 py-2">${escapeHtml(row.posExternalId || '')}</td>` : ''}
+      </tr>`).join('');
+
+    Swal.fire({
+      title: fieldHeader,
+      width: isCategoryProductCatalog ? 1300 : 1000,
+      html: `
+        <div class="max-h-[500px] overflow-auto text-left">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="border border-slate-200 px-3 py-2">Nombre</th>
+                <th class="border border-slate-200 px-3 py-2">ID externo</th>
+                ${isCategoryProductCatalog ? '<th class="border border-slate-200 px-3 py-2">Categoría POS</th><th class="border border-slate-200 px-3 py-2">ID externo POS</th>' : ''}
+              </tr>
+            </thead>
+            <tbody>${table}</tbody>
+          </table>
+        </div>
+        <p class="mt-3 text-xs text-slate-500">Mostrando hasta 150 registros.</p>
+      `
+    });
+  }
+
+  async function deleteCatalog(fieldHeader) {
+    if (!state.catalogs[fieldHeader]) {
+      Swal.fire({ icon: 'info', title: 'Nada para borrar', text: 'Ese campo no tiene catálogo cargado.' });
+      return;
+    }
+
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Borrar catálogo',
+      text: `Se eliminará el catálogo cargado para ${fieldHeader}.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, borrar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) return;
+
+    delete state.catalogs[fieldHeader];
+    saveCatalogs();
+    buildCatalogGrid();
+    buildForm();
+    updateKpis();
+    Swal.fire({ icon: 'success', title: 'Catálogo borrado' });
+  }
+
+  function resolveCatalogId(sourceHeader, sourceValue) {
+    const catalog = state.catalogs[sourceHeader] || [];
+    if (!sourceValue) return '';
+    const found = catalog.find(row => normalizeText(row.name) === normalizeText(sourceValue));
+    return found ? found.externalId : '';
+  }
+
+  function catalogHasMatch(sourceHeader, sourceValue) {
+    if (!String(sourceValue || '').trim()) return false;
+    return !!resolveCatalogId(sourceHeader, sourceValue);
+  }
+
+  function validateFormValues(raw) {
+    const missing = [];
+    getRequiredHeaders(raw['/Product Type_NO.']).forEach(header => {
+      const currentValue = String(raw[header] ?? '').trim();
+      if (currentValue) return;
+
+      const label = (state.fieldMeta.find(f => f.header === header)?.label) || header;
+      missing.push(label);
+    });
+
+    if (missing.length) {
+      throw new Error(`Faltan campos obligatorios: ${missing.slice(0, 8).join(', ')}${missing.length > 8 ? '...' : ''}`);
+    }
+
+    if (raw['._Categoría del producto/Nombre completo'] && state.catalogs['._Categoría del producto/Nombre completo']?.length && !catalogHasMatch('._Categoría del producto/Nombre completo', raw['._Categoría del producto/Nombre completo'])) {
+      throw new Error('La Categoría del producto debe seleccionarse desde el catálogo cargado.');
+    }
+
+    const categoryRecord = resolveProductCategoryRecord(raw['._Categoría del producto/Nombre completo']);
+    if (raw['._Categoría del producto/Nombre completo'] && !categoryRecord) {
+      throw new Error('La Categoría del producto debe seleccionarse desde el catálogo cargado.');
+    }
+    if (raw['._Categoría del producto/Nombre completo'] && categoryRecord && !String(categoryRecord.posExternalId || '').trim()) {
+      throw new Error('La categoría seleccionada no tiene configurada la Categoría de Punto de venta/ID externo en el catálogo.');
+    }
+
+    if (!/^\d{8,14}$/.test(String(raw['Código de barras']).trim())) {
+      throw new Error('El Código de barras debe tener entre 8 y 14 dígitos numéricos.');
+    }
+
+    if (raw['Código de barras alterno'] && !/^\d{8,14}$/.test(String(raw['Código de barras alterno']).trim())) {
+      throw new Error('El Código de barras alterno debe tener entre 8 y 14 dígitos numéricos.');
+    }
+
+    const pvpIva = numberOrNull(raw['Precio (PVP+IVA)']);
+    const pvf = numberOrNull(raw['Precio (PVF)']);
+    const udmCompra = numberOrNull(raw['UdM_de_compra_No']);
+    if (pvpIva === null || pvpIva <= 0) throw new Error('Precio (PVP+IVA) debe ser mayor a 0.');
+    if (pvf === null || pvf < 0) throw new Error('Precio (PVF) debe ser un número válido.');
+    if (udmCompra === null || udmCompra <= 0) throw new Error('UdM de compra debe ser mayor a 0.');
+
+    const duplicateBarcode = state.rows.some(row => normalizeText(row.visible['Código de barras']) === normalizeText(raw['Código de barras']));
+    if (duplicateBarcode) throw new Error('Ya existe un registro con ese Código de barras en la tabla.');
+  }
+
+  function deriveAutomaticValues(raw) {
+    const iva = String(raw['.IVA_No'] || '');
+    const ivaRules = TAX_RULES[iva] || {};
+    const pvpIva = numberOrNull(raw['Precio (PVP+IVA)']) || 0;
+    const ivaFactor = numberOrNull(iva) || 1;
+    const udmCompra = numberOrNull(raw['UdM_de_compra_No']) || 1;
+
+    const pvpUnidad = round6(pvpIva / ivaFactor);
+    const pvxUnidad = pvpUnidad;
+    const precioVenta = round6(pvpUnidad / udmCompra);
+    const pvxFraccion = round6(pvxUnidad / udmCompra);
+
+    const categoryRecord = resolveProductCategoryRecord(raw['._Categoría del producto/Nombre completo']);
+    const categoryPos = categoryRecord?.posName || '';
+
+    const derivedVisible = {
+      'Precio (PVP Unidad)': pvpUnidad,
+      'Precio PVX (Unidad)': pvxUnidad,
+      'Precio de venta': precioVenta,
+      'Precio PVX (Fracción)': pvxFraccion,
+      '_..Impuestos del cliente/Nombre del impuesto_No': ivaRules.clientName || '',
+      '_..Impuestos de proveedor/Nombre del impuesto_No': ivaRules.supplierName || '',
+      '_.Cuenta de ingresos/Nombre de la cuenta_No': ivaRules.incomeAccountName || '',
+      '_.Cuenta de gastos/Nombre de la cuenta_No': ivaRules.expenseAccountName || '',
+      'Impuestos del cliente/ID externo': ivaRules.clientId || '',
+      'Impuestos de proveedor/ID externo': ivaRules.supplierId || '',
+      'Cuenta de ingresos/ID externo': ivaRules.incomeAccountId || '',
+      'Cuenta de gastos/ID externo': ivaRules.expenseAccountId || '',
+      '/Categoría del POS (Pdv)/Nombre de categoría': categoryPos,
+      'Categoría del producto/ID externo': categoryRecord?.externalId || '',
+      'Categoría del Punto de venta/ID externo': categoryRecord?.posExternalId || ''
+    };
+
+    return derivedVisible;
+  }
+
+  function extractLastCategorySegment(fullCategory) {
+    const parts = String(fullCategory || '').split('/').map(x => x.trim()).filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : '';
+  }
+
+  function buildRecordFromForm() {
+    const raw = {};
+    getEditableFields().forEach(field => {
+      raw[field.header] = getFieldValue(field.header);
+    });
+
+    validateFormValues(raw);
+
+    const visible = {};
+    state.fieldMeta.forEach(field => {
+      if (field.type === 'fixed') {
+        visible[field.header] = field.fixedDefault;
+      } else if (field.type === 'calculated' || field.type === 'auto') {
+        visible[field.header] = '';
+      } else {
+        visible[field.header] = raw[field.header] ?? '';
+      }
+    });
+
+    const derived = deriveAutomaticValues(raw);
+    Object.entries(derived).forEach(([header, value]) => { visible[header] = value; });
+
+    // completar encabezados automáticos de ID externo
+    const technical = {};
+    state.fieldMeta.forEach(field => {
+      if (field.type === 'auto' && field.sourceHeader) {
+        technical[field.header] = resolveCatalogId(field.sourceHeader, visible[field.sourceHeader]);
+      } else {
+        technical[field.header] = visible[field.header];
+      }
+    });
+
+    // valores visibles automáticos que también pueden venir por catálogo
+    ['/Marca/ID externo','Unidad de medida/ID externo','UdM de compra/ID externo','Product Type/ID externo','Línea de laboratorio/ID externo','Presentación/ID externo','Temperatura/ID externo','Concentración/ID externo','Principio activo/ID externo','Forma farmacéutica/ID externo','Vía administración/ID externo','Fiscalización/ID externo','Centro de Costo/ID externo'].forEach(header => {
+      const src = getCatalogSourceHeader(header);
+      if (src) technical[header] = resolveCatalogId(src, visible[src]);
+    });
+
+    technical['Categoría del producto/ID externo'] = visible['Categoría del producto/ID externo'] || '';
+    technical['Categoría del Punto de venta/ID externo'] = visible['Categoría del Punto de venta/ID externo'] || '';
+    technical['Impuestos del cliente/ID externo'] = visible['Impuestos del cliente/ID externo'] || '';
+    technical['Impuestos de proveedor/ID externo'] = visible['Impuestos de proveedor/ID externo'] || '';
+    technical['Cuenta de ingresos/ID externo'] = visible['Cuenta de ingresos/ID externo'] || '';
+    technical['Cuenta de gastos/ID externo'] = visible['Cuenta de gastos/ID externo'] || '';
+
+    if (!technical['/Marca/ID externo'] && visible['/Marca_No']) {
+      // no forzar error, solo dejar vacío si no hay catálogo
+    }
+
+    return { visible, technical };
+  }
+
+  async function addRow() {
+    try {
+      const record = buildRecordFromForm();
+
+      const missingCatalogIds = state.fieldMeta
+        .filter(f => f.type === 'auto' && f.sourceHeader)
+        .filter(f => record.visible[f.sourceHeader])
+        .filter(f => !String(record.technical[f.header] ?? '').trim())
+        .map(f => `${f.label} (desde ${state.fieldMeta.find(x => x.header === f.sourceHeader)?.label || f.sourceHeader})`);
+
+      if (missingCatalogIds.length) {
+        const result = await Swal.fire({
+          icon: 'warning',
+          title: 'Hay campos sin ID externo',
+          html: `Los siguientes campos no encontraron equivalencia en sus catálogos:<br><br><div class="text-left text-sm">${missingCatalogIds.slice(0,10).map(v => `• ${escapeHtml(v)}`).join('<br>')}</div><br>¿Deseas guardar el registro de todas formas?`,
+          showCancelButton: true,
+          confirmButtonText: 'Guardar igual',
+          cancelButtonText: 'Revisar'
+        });
+        if (!result.isConfirmed) return;
+      }
+
+      state.rows.push(record);
+      saveRows();
+      renderPreview();
+      updateKpis();
+      clearForm();
+      Swal.fire({ icon: 'success', title: 'Producto agregado', timer: 1600, showConfirmButton: false });
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'No se pudo agregar', text: error.message || 'Revisa los datos ingresados.' });
+    }
+  }
+
+  function renderPreview() {
+    const visibleHeaders = [
+      'single_name','/Marca_No','Código de barras','Nombre Ecommerce','Registro sanitario','Precio (PVP+IVA)','Línea de laboratorio/Nombre_No','/Principio activo_No','/Forma farmacéutica_No','Tipo de producto','Estado de Producto','._Categoría del producto/Nombre completo'
+    ];
+    const techHeaders = ['/Marca/ID externo','Product Type/ID externo','Principio activo/ID externo','Forma farmacéutica/ID externo','Categoría del producto/ID externo','Categoría del Punto de venta/ID externo','Impuestos del cliente/ID externo','Impuestos de proveedor/ID externo','Cuenta de ingresos/ID externo','Cuenta de gastos/ID externo'];
+    const headersToShow = state.showTechColumns ? [...visibleHeaders, ...techHeaders] : visibleHeaders;
+
+    el.previewHead.innerHTML = `
+      <tr>
+        <th class="px-3 py-3 text-left font-bold text-cresioInk">#</th>
+        ${headersToShow.map(h => `<th class="px-3 py-3 text-left font-bold text-cresioInk whitespace-nowrap">${escapeHtml((state.fieldMeta.find(f => f.header === h)?.label) || h)}</th>`).join('')}
+        <th class="px-3 py-3 text-left font-bold text-cresioInk">Acciones</th>
+      </tr>`;
+
+    if (!state.rows.length) {
+      el.previewBody.innerHTML = `
+        <tr>
+          <td colspan="${headersToShow.length + 2}" class="px-3 py-8 text-center text-slate-500">Todavía no hay registros cargados.</td>
+        </tr>`;
+      return;
+    }
+
+    el.previewBody.innerHTML = state.rows.map((row, index) => `
+      <tr class="hover:bg-slate-50">
+        <td class="px-3 py-3 text-slate-500">${index + 1}</td>
+        ${headersToShow.map(header => `<td class="px-3 py-3 whitespace-nowrap">${escapeHtml((state.showTechColumns ? (row.technical[header] ?? '') : (row.visible[header] ?? row.technical[header] ?? '')))}</td>`).join('')}
+        <td class="px-3 py-3">
+          <button data-delete-row="${index}" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold hover:bg-rose-100">Eliminar</button>
+        </td>
+      </tr>`).join('');
+
+    document.querySelectorAll('[data-delete-row]').forEach(btn => {
+      btn.addEventListener('click', () => removeRow(Number(btn.getAttribute('data-delete-row'))));
+    });
+  }
+
+  async function removeRow(index) {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Eliminar registro',
+      text: 'Este registro saldrá de la vista previa.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
+    state.rows.splice(index, 1);
+    saveRows();
+    renderPreview();
+    updateKpis();
+    Swal.fire({ icon: 'success', title: 'Registro eliminado', timer: 1200, showConfirmButton: false });
+  }
+
+  function buildExportRows() {
+    return state.rows.map(record => {
+      const row = {};
+      EXPORT_HEADERS.forEach(header => {
+        row[header] = getExportValue(record, header);
+      });
+      return row;
+    });
+  }
+
+  async function exportExcel() {
+    if (!state.rows.length) {
+      Swal.fire({ icon: 'warning', title: 'No hay registros', text: 'Agrega al menos un producto antes de exportar.' });
+      return;
+    }
+
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('PLANTILLA');
+
+      worksheet.addRow(EXPORT_HEADERS);
+      buildExportRows().forEach(obj => {
+        worksheet.addRow(EXPORT_HEADERS.map(header => obj[header]));
+      });
+
+      worksheet.properties.defaultRowHeight = 15;
+
+      worksheet.eachRow((row, rowNumber) => {
+        row.height = 15;
+        row.eachCell((cell) => {
+          cell.font = { name: 'Calibri', size: 8 };
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: false };
+          if (rowNumber === 1) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E0E8' } };
+            cell.font = { name: 'Calibri', size: 8, bold: true, color: { argb: 'FF1E334D' } };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+              left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+              bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+              right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+            };
+          }
+        });
+      });
+
+      const numHeaders = ['Precio (PVF)','Precio (PVP+IVA)','Precio (PVP Unidad)','Precio PVX (Unidad)','Precio de venta','Precio PVX (Fracción)','Peso','Ancho (cm)','Largo (cm)','Altura (cm)','Costo','Último precio venta','Último precio compra'];
+      const dateHeaders = ['Fecha vencimiento'];
+      EXPORT_HEADERS.forEach((header, idx) => {
+        const col = worksheet.getColumn(idx + 1);
+        col.width = Math.min(Math.max(String(header).length + 4, 14), 38);
+        if (numHeaders.includes(header)) col.numFmt = '0.000000';
+        if (dateHeaders.includes(header)) col.numFmt = 'dd-mm-yyyy';
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `Plantilla_Crear_Productos_${new Date().toISOString().slice(0,10)}.xlsx`);
+      Swal.fire({ icon: 'success', title: 'Excel generado', text: 'La plantilla fue descargada correctamente.' });
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'No se pudo exportar', text: error.message || 'Inténtalo nuevamente.' });
+    }
+  }
+
+  async function clearAllRows() {
+    if (!state.rows.length) {
+      Swal.fire({ icon: 'info', title: 'No hay registros para borrar.' });
+      return;
+    }
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Reiniciar registros',
+      text: 'Se eliminarán todos los productos cargados en la vista previa.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, borrar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
+    state.rows = [];
+    saveRows();
+    renderPreview();
+    updateKpis();
+    Swal.fire({ icon: 'success', title: 'Registros eliminados' });
+  }
+
+  async function clearAllCatalogs() {
+    const hasCatalogs = Object.keys(state.catalogs).length > 0;
+    if (!hasCatalogs) {
+      Swal.fire({ icon: 'info', title: 'No hay catálogos cargados.' });
+      return;
+    }
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Borrar todos los catálogos',
+      text: 'Se eliminarán todas las equivalencias guardadas en este navegador.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, borrar todo',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
+    state.catalogs = {};
+    state.catalogMeta = {};
+    saveCatalogs();
+    buildCatalogGrid();
+    buildForm();
+    updateKpis();
+    Swal.fire({ icon: 'success', title: 'Catálogos eliminados' });
+  }
+
+
+  async function exportBackup() {
+    try {
+      const payload = {
+        version: 4,
+        exportedAt: new Date().toISOString(),
+        template: state.template,
+        catalogs: state.catalogs,
+        catalogMeta: state.catalogMeta,
+        rows: state.rows,
+        draft: state.draft,
+        ui: {
+          activePage: state.activePage,
+          showTechColumns: state.showTechColumns
+        }
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      saveAs(blob, `CRESIO_respaldo_productos_${new Date().toISOString().slice(0,10)}.json`);
+      Swal.fire({ icon: 'success', title: 'Respaldo exportado' });
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'No se pudo exportar el respaldo', text: error.message || 'Inténtalo nuevamente.' });
+    }
+  }
+
+  async function importBackup(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const raw = await file.text();
+      const payload = JSON.parse(raw);
+      if (!payload || typeof payload !== 'object') throw new Error('El archivo JSON no tiene una estructura válida.');
+      if (!payload.template || !payload.catalogs) throw new Error('El respaldo no contiene template y catálogos.');
+
+      state.template = payload.template;
+      state.catalogs = payload.catalogs || {};
+      state.catalogMeta = payload.catalogMeta || {};
+      state.rows = Array.isArray(payload.rows) ? payload.rows : [];
+      state.draft = payload.draft && typeof payload.draft === 'object' ? payload.draft : {};
+      state.activePage = payload.ui?.activePage || 'config';
+      state.showTechColumns = !!payload.ui?.showTechColumns;
+      rebuildTemplateMeta();
+      saveTemplate();
+      saveCatalogs();
+      saveRows();
+      saveDraft();
+      saveUiState();
+      buildCatalogGrid();
+      buildForm();
+      renderPreview();
+      updateKpis();
+      Swal.fire({ icon: 'success', title: 'Respaldo importado', text: 'La configuración quedó restaurada en este navegador.' });
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'No se pudo importar el respaldo', text: error.message || 'Revisa el archivo JSON.' });
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  function wireEvents() {
+    el.templateFile.addEventListener('change', handleTemplateUpload);
+    el.btnAddRow.addEventListener('click', addRow);
+    el.btnClearForm.addEventListener('click', clearForm);
+    el.btnExport.addEventListener('click', exportExcel);
+    el.btnResetAll.addEventListener('click', clearAllRows);
+    el.btnExportConfig.addEventListener('click', exportBackup);
+    el.backupFile.addEventListener('change', importBackup);
+    el.btnClearCatalogs.addEventListener('click', clearAllCatalogs);
+    el.tabConfig.addEventListener('click', () => switchPage('config'));
+    el.tabWork.addEventListener('click', () => switchPage('work'));
+    el.btnToggleTech.addEventListener('click', () => {
+      state.showTechColumns = !state.showTechColumns;
+      saveUiState();
+      el.btnToggleTech.textContent = state.showTechColumns ? 'Ver columnas visibles' : 'Ver columnas técnicas';
+      renderPreview();
+    });
+  }
+
+  function init() {
+    loadFromStorage();
+    buildCatalogGrid();
+    buildForm();
+    renderPreview();
+    updateKpis();
+    wireEvents();
+    el.btnToggleTech.textContent = state.showTechColumns ? 'Ver columnas visibles' : 'Ver columnas técnicas';
+    switchPage(state.activePage || 'config');
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
