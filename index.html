@@ -810,11 +810,21 @@
     node.value = value ?? '';
   }
 
-  function clearForm() {
+  function clearForm(preserveFields = {}) {
     getEditableFields().forEach(field => {
-      setFieldValue(field.header, '');
-      delete state.draft[field.header];
+      const nextValue = Object.prototype.hasOwnProperty.call(preserveFields, field.header)
+        ? preserveFields[field.header]
+        : '';
+
+      setFieldValue(field.header, nextValue);
+
+      if (nextValue === '' || nextValue === null || nextValue === undefined) {
+        delete state.draft[field.header];
+      } else {
+        state.draft[field.header] = nextValue;
+      }
     });
+
     saveDraft();
     refreshRequiredIndicators();
   }
@@ -1181,6 +1191,41 @@
     return { visible, technical };
   }
 
+  async function loadRecordIntoForm(index) {
+    const record = state.rows[index];
+    if (!record) return;
+
+    const fieldsToClear = new Set([
+      'single_name',
+      'Código de barras',
+      'Código de barras alterno',
+      'Precio (PVF)',
+      'Precio (PVP+IVA)'
+    ]);
+
+    const formValues = {};
+
+    getEditableFields().forEach(field => {
+      const header = field.header;
+      const currentValue = record.visible?.[header] ?? '';
+      formValues[header] = fieldsToClear.has(header) ? '' : currentValue;
+    });
+
+    clearForm(formValues);
+    switchPage('work');
+
+    const formSection = document.getElementById('formSections');
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Producto cargado al formulario',
+      text: 'Completa los campos faltantes y agrega el producto.'
+    });
+  }
+
   async function addRow() {
     try {
       const record = buildRecordFromForm();
@@ -1239,11 +1284,18 @@
     el.previewBody.innerHTML = state.rows.map((row, index) => `
       <tr class="hover:bg-slate-50">
         <td class="px-3 py-3 text-slate-500">${index + 1}</td>
-        ${headersToShow.map(header => `<td class="px-3 py-3 whitespace-nowrap">${escapeHtml((state.showTechColumns ? (row.technical[header] ?? '') : (row.visible[header] ?? row.technical[header] ?? '')))}</td>`).join('')}
+        ${headersToShow.map(header => `<td class="px-3 py-3 whitespace-nowrap">${escapeHtml((state.showTechColumns ? (row.technical?.[header] ?? '') : (row.visible?.[header] ?? row.technical?.[header] ?? '')))}</td>`).join('')}
         <td class="px-3 py-3">
-          <button data-delete-row="${index}" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold hover:bg-rose-100">Eliminar</button>
+          <div class="flex gap-2">
+            <button data-duplicate-row="${index}" class="px-3 py-1.5 rounded-lg bg-cresioBlue text-cresioInk border border-slate-300 text-xs font-bold hover:bg-slate-200">Duplicar</button>
+            <button data-delete-row="${index}" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold hover:bg-rose-100">Eliminar</button>
+          </div>
         </td>
       </tr>`).join('');
+
+    document.querySelectorAll('[data-duplicate-row]').forEach(btn => {
+      btn.addEventListener('click', () => loadRecordIntoForm(Number(btn.getAttribute('data-duplicate-row'))));
+    });
 
     document.querySelectorAll('[data-delete-row]').forEach(btn => {
       btn.addEventListener('click', () => removeRow(Number(btn.getAttribute('data-delete-row'))));
