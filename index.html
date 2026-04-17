@@ -816,13 +816,17 @@ sin autorización previa y por escrito del autor.
   }
 
   function getRequiredHeaders(productTypeValue = '') {
+    const PHARMA_ONLY_FIELDS = ['/Concentración_No', '/Principio activo_No', '/Forma farmacéutica_No', '/Vía administración_No'];
+
     const baseRequired = [
       'single_name','/Marca_No','Código de barras','Nombre Ecommerce','_.Unidad_de_medida_No','UdM_de_compra_No','/Product Type_NO.','Registro sanitario','Fecha vencimiento','Precio (PVF)','Precio (PVP+IVA)','Línea de laboratorio/Nombre_No','/_.Presentación_No','Temperatura/Nombre_No','/Concentración_No','/Principio activo_No','/Forma farmacéutica_No','/Vía administración_No','Medicamento crónico','/Fiscalización_No','Requiere Médico/Receta','.IVA_No','_.Centro de Costo/Nombre_No','Tipo de producto','Estado de Producto','._Categoría del producto/Nombre completo','Producto genérico','Recomendación única','Categoría ARCSA'
     ];
 
     const normalizedProductType = normalizeText(productTypeValue);
-    if (normalizedProductType === 'CONSUMO/HOSPITALARIOS') {
-      return baseRequired.filter(header => !['/Principio activo_No','/Forma farmacéutica_No','/Concentración_No'].includes(header));
+
+    // Solo MEDICINA exige los campos farmacéuticos; cualquier otro tipo los excluye de obligatorios
+    if (normalizedProductType !== 'MEDICINA') {
+      return baseRequired.filter(header => !PHARMA_ONLY_FIELDS.includes(header));
     }
 
     return baseRequired;
