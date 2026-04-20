@@ -272,7 +272,7 @@ sin autorización previa y por escrito del autor.
 
 
   const EXPORT_HEADERS = [
-    'single_name','Marca/ID externo','Código de barras','Código de barras alterno','Nombre Ecommerce','Unidad de medida/ID externo','UdM de compra/ID externo','Product Type/ID externo','Registro sanitario','Fecha vencimiento','Precio (PVF)','Precio (PVP+IVA)','Precio (PVP Unidad)','Precio PVX (Unidad)','Precio de venta','Precio PVX (Fracción)','Línea de laboratorio/ID externo','Presentación/ID externo','Temperatura/ID externo','Código SA','Tipos de incentivos/ID','Concentración/ID externo','Principio activo/ID externo','Forma farmacéutica/ID externo','Vía administración/ID externo','Medicamento crónico','Fiscalización/ID externo','Requiere Médico/Receta','IVA','Impuestos del cliente/ID externo','Impuestos de proveedor/ID externo','Centro de Costo/ID externo','Cuenta de ingresos/ID externo','Cuenta de gastos/ID externo','Tipo de producto','Política de facturación','Seguimiento','Auto crear lote','Referencia Anterior','Costo','Último precio venta','Último precio compra','Estado de Producto','Peso','Ancho (cm)','Largo (cm)','Altura (cm)','Categoría del producto/ID externo','Categoría del Punto de venta/ID externo','Disponible en PdV','Se puede vender','Se puede comprar','Seguir vendiendo aunque no haya existencias','Medicación continua','Producto genérico','Recomendación única','Auto update','Política de control','Categoría ARCSA'
+    'single_name','Marca/ID externo','Código de barras','Código de barras alterno','Nombre Ecommerce','Unidad de medida/ID externo','UdM de compra/ID externo','Product Type/ID externo','Registro sanitario','Fecha vencimiento','Precio (PVF)','Precio (PVP+IVA)','Precio (PVP Unidad)','Precio PVX (Unidad)','Precio de venta','Precio PVX (Fracción)','Línea de laboratorio/ID externo','Presentación/ID externo','Temperatura/ID externo','Código SA','Tipos de incentivos/ID','Concentración/ID externo','Principio activo/ID externo','Forma farmacéutica/ID externo','Vía administración/ID externo','Medicamento crónico','Fiscalización/ID externo','Requiere Médico/Receta','IVA','Impuestos del cliente/ID externo','Impuestos de proveedor/ID externo','Centro de Costo/ID externo','Cuenta de ingresos/ID externo','Cuenta de gastos/ID externo','Tipo de producto','Política de facturación','Seguimiento','Auto crear lote','Referencia Anterior','Costo','Último precio venta','Último precio compra','Estado de Producto','Peso','Ancho (cm)','Largo (cm)','Altura (cm)','Categoría del producto/ID externo','Categoría del Punto de venta/ID externo','Disponible en PdV','Se puede vender','Se puede comprar','Seguir vendiendo aunque no haya existencias','Medicación continua','Producto genérico','Recomendación única','Auto update','Política de control','Categoría ARCSA','Sincronizar producto'
   ];
 
   const EXPORT_HEADER_MAP = {
@@ -1510,11 +1510,27 @@ sin autorización previa y por escrito del autor.
     Swal.fire({ icon: 'success', title: 'Registro eliminado', timer: 1200, showConfirmButton: false });
   }
 
+  function calcSincronizarProducto(record) {
+    const productTypeVisible = String(record.visible?.['/Product Type_NO.'] ?? '');
+    const normalized = normalizeText(productTypeVisible);
+    if (normalized === normalizeText('Productos Minimarket') || normalized === normalizeText('Servicio externo/Recargas')) {
+      return false;
+    }
+    if (normalized === normalizeText('Medicina') || normalized === normalizeText('Consumo/Hospitalarios')) {
+      return true;
+    }
+    return '';
+  }
+
   function buildExportRows() {
     return state.rows.map(record => {
       const row = {};
       EXPORT_HEADERS.forEach(header => {
-        row[header] = getExportValue(record, header);
+        if (header === 'Sincronizar producto') {
+          row[header] = calcSincronizarProducto(record);
+        } else {
+          row[header] = getExportValue(record, header);
+        }
       });
       return row;
     });
