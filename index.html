@@ -265,14 +265,17 @@ sin autorización previa y por escrito del autor.
     'PVF: (Sin IVA)': 'Precio (PVF)',
     'PVP: (Con IVA)': 'Precio (PVP+IVA)',
     'Graba IVA': '.IVA_No',
-    'Cond. Almacenamiento: (Temperatura)': 'Temperatura/Nombre_No'
+    'Cond. Almacenamiento: (Temperatura)': 'Temperatura/Nombre_No',
+    'Cantidad por Caja Master/Empaque/Master pack': 'embalaje_cantidad',
+    'Código Barras Caja/Paca: (EAN 14)': 'embalaje_barcode'
   };
 
   const FICHA_REQUIRED_LABELS = Object.keys(FICHA_FIELD_MAP);
 
 
   const EXPORT_HEADERS = [
-    'single_name','Marca/ID externo','Código de barras','Código de barras alterno','Nombre Ecommerce','Unidad de medida/ID externo','UdM de compra/ID externo','Product Type/ID externo','Registro sanitario','Fecha vencimiento','Precio (PVF)','Precio (PVP+IVA)','Precio (PVP Unidad)','Precio PVX (Unidad)','Precio de venta','Precio PVX (Fracción)','Línea de laboratorio/ID externo','Presentación/ID externo','Temperatura/ID externo','Código SA','Tipos de incentivos/ID','Concentración/ID externo','Principio activo/ID externo','Forma farmacéutica/ID externo','Vía administración/ID externo','Medicamento crónico','Fiscalización/ID externo','Requiere Médico/Receta','IVA','Impuestos del cliente/ID externo','Impuestos de proveedor/ID externo','Centro de Costo/ID externo','Cuenta de ingresos/ID externo','Cuenta de gastos/ID externo','Tipo de producto','Política de facturación','Seguimiento','Auto crear lote','Referencia Anterior','Costo','Último precio venta','Último precio compra','Estado de Producto','Peso','Ancho (cm)','Largo (cm)','Altura (cm)','Categoría del producto/ID externo','Categoría del Punto de venta/ID externo','Disponible en PdV','Se puede vender','Se puede comprar','Seguir vendiendo aunque no haya existencias','Medicación continua','Producto genérico','Recomendación única','Auto update','Política de control','Categoría ARCSA','Sincronizar producto'
+    'single_name','Marca/ID externo','Código de barras','Código de barras alterno','Nombre Ecommerce','Unidad de medida/ID externo','UdM de compra/ID externo','Product Type/ID externo','Registro sanitario','Fecha vencimiento','Precio (PVF)','Precio (PVP+IVA)','Precio (PVP Unidad)','Precio PVX (Unidad)','Precio de venta','Precio PVX (Fracción)','Línea de laboratorio/ID externo','Presentación/ID externo','Temperatura/ID externo','Código SA','Tipos de incentivos/ID','Concentración/ID externo','Principio activo/ID externo','Forma farmacéutica/ID externo','Vía administración/ID externo','Medicamento crónico','Fiscalización/ID externo','Requiere Médico/Receta','IVA','Impuestos del cliente/ID externo','Impuestos de proveedor/ID externo','Centro de Costo/ID externo','Cuenta de ingresos/ID externo','Cuenta de gastos/ID externo','Tipo de producto','Política de facturación','Seguimiento','Auto crear lote','Referencia Anterior','Costo','Último precio venta','Último precio compra','Estado de Producto','Peso','Ancho (cm)','Largo (cm)','Altura (cm)','Categoría del producto/ID externo','Categoría del Punto de venta/ID externo','Disponible en PdV','Se puede vender','Se puede comprar','Seguir vendiendo aunque no haya existencias','Medicación continua','Producto genérico','Recomendación única','Auto update','Política de control','Categoría ARCSA','Sincronizar producto',
+    'Paquetes de productos/Embalaje del producto','Paquetes de productos/Cantidad incluida','Paquetes de productos/Código de barras','Paquetes de productos/Sugerido','Paquetes de productos/Ventas','Paquetes de productos/Compra','Paquetes de productos/Empresa/ID'
   ];
 
   const EXPORT_HEADER_MAP = {
@@ -359,7 +362,10 @@ sin autorización previa y por escrito del autor.
     '/Categoría del POS (Pdv)/Nombre de categoría': 'Categoría POS',
     'Producto genérico': 'Producto genérico',
     'Recomendación única': 'Recomendación única',
-    'Categoría ARCSA': 'Categoría ARCSA'
+    'Categoría ARCSA': 'Categoría ARCSA',
+    'embalaje_tipo': 'Paquetes de productos / Embalaje del producto',
+    'embalaje_cantidad': 'Paquetes de productos / Cantidad incluida',
+    'embalaje_barcode': 'Paquetes de productos / Código de barras'
   };
 
 
@@ -394,6 +400,10 @@ sin autorización previa y por escrito del autor.
     accounting: {
       title: 'Cuentas y estructura',
       fields: ['_.Centro de Costo/Nombre_No','Estado de Producto','._Categoría del producto/Nombre completo','Producto genérico','Recomendación única']
+    },
+    embalaje: {
+      title: 'Embalaje',
+      fields: ['embalaje_tipo','embalaje_cantidad','embalaje_barcode']
     }
   };
 
@@ -690,6 +700,36 @@ sin autorización previa y por escrito del autor.
 
   function renderField(header) {
     if (header === '/Categoría del POS (Pdv)/Nombre de categoría') return '';
+
+    // Campos especiales de Embalaje
+    if (header === 'embalaje_tipo') {
+      const baseClass = 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-cresioViolet/25 focus:border-cresioViolet';
+      return `
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Embalaje del producto</label>
+          <select id="fld_embalaje_tipo" data-embalaje="tipo" class="${baseClass}">
+            <option value="">Seleccione</option>
+            <option value="CAJA">CAJA</option>
+            <option value="PACA">PACA</option>
+          </select>
+        </div>`;
+    }
+    if (header === 'embalaje_cantidad') {
+      const baseClass = 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-cresioViolet/25 focus:border-cresioViolet';
+      return `
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Cantidad incluida <span class="text-xs font-normal text-slate-400">(Cantidad por Caja Master)</span></label>
+          <input id="fld_embalaje_cantidad" data-embalaje="cantidad" type="number" min="1" step="1" class="${baseClass}" placeholder="Ej: 12" />
+        </div>`;
+    }
+    if (header === 'embalaje_barcode') {
+      const baseClass = 'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-cresioViolet/25 focus:border-cresioViolet';
+      return `
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Código de barras <span class="text-xs font-normal text-slate-400">(EAN 14 Caja/Paca)</span></label>
+          <input id="fld_embalaje_barcode" data-embalaje="barcode" type="text" class="${baseClass}" placeholder="Código EAN 14" />
+        </div>`;
+    }
     const meta = state.fieldMeta.find(f => f.header === header);
     if (!meta) return '';
     const id = `fld_${slugify(header)}`;
@@ -786,11 +826,59 @@ sin autorización previa y por escrito del autor.
     });
   }
 
+  function applyEmbalajeAutoFill() {
+    const singleNameNode = document.querySelector(`[data-header="${cssEscape('single_name')}"]`);
+    const embTipoNode = document.querySelector(`[data-embalaje="tipo"]`);
+    if (!singleNameNode || !embTipoNode) return;
+    const autoValue = normalizeText(singleNameNode.value).startsWith('PANAL') ? 'PACA' : 'CAJA';
+    embTipoNode.value = autoValue;
+    state.draft['embalaje_tipo'] = autoValue;
+    saveDraft();
+  }
+
+  function applyUdmAutoFill() {
+    const udmNode = document.querySelector(`[data-header="${cssEscape('_.Unidad_de_medida_No')}"]`);
+    const udmCompraNode = document.querySelector(`[data-header="${cssEscape('UdM_de_compra_No')}"]`);
+    if (!udmNode || !udmCompraNode) return;
+    if (normalizeText(udmNode.value) === 'UNIDADES') {
+      udmCompraNode.value = '1';
+      state.draft['UdM_de_compra_No'] = '1';
+      saveDraft();
+    }
+  }
+
+  function applyProductTypeAutoFill() {
+    const productTypeNode = document.querySelector(`[data-header="${cssEscape('/Product Type_NO.')}"]`);
+    const tipoNode = document.querySelector(`[data-header="${cssEscape('Tipo de producto')}"]`);
+    if (!productTypeNode || !tipoNode) return;
+    const normalized = normalizeText(productTypeNode.value);
+    const ALMACENABLE_TYPES = ['CONSUMO/HOSPITALARIOS','MEDICINA','PRODUCTOS MINIMARKET'];
+    if (!normalized) return;
+    const autoValue = ALMACENABLE_TYPES.includes(normalized) ? 'Producto almacenable' : 'Servicio';
+    tipoNode.value = autoValue;
+    state.draft['Tipo de producto'] = autoValue;
+    saveDraft();
+  }
+
   function attachFieldEvents() {
     const productTypeField = document.querySelector(`[data-header="${cssEscape('/Product Type_NO.')}"]`);
     if (productTypeField) {
       productTypeField.addEventListener('change', refreshRequiredIndicators);
       productTypeField.addEventListener('input', refreshRequiredIndicators);
+      productTypeField.addEventListener('change', applyProductTypeAutoFill);
+      productTypeField.addEventListener('input', applyProductTypeAutoFill);
+    }
+
+    const udmField = document.querySelector(`[data-header="${cssEscape('_.Unidad_de_medida_No')}"]`);
+    if (udmField) {
+      udmField.addEventListener('change', applyUdmAutoFill);
+      udmField.addEventListener('input', applyUdmAutoFill);
+    }
+
+    const singleNameField = document.querySelector(`[data-header="${cssEscape('single_name')}"]`);
+    if (singleNameField) {
+      singleNameField.addEventListener('input', applyEmbalajeAutoFill);
+      singleNameField.addEventListener('change', applyEmbalajeAutoFill);
     }
 
     document.querySelectorAll('[data-header]').forEach(node => {
@@ -813,6 +901,20 @@ sin autorización previa y por escrito del autor.
     populateFormDraft();
     updateFichaAutofillStyles();
     refreshRequiredIndicators();
+
+    // Embalaje fields events
+    ['tipo','cantidad','barcode'].forEach(key => {
+      const node = document.querySelector(`[data-embalaje="${key}"]`);
+      if (!node) return;
+      const savedVal = state.draft[`embalaje_${key}`];
+      if (savedVal !== undefined && savedVal !== null) node.value = savedVal;
+      ['input','change'].forEach(ev => {
+        node.addEventListener(ev, () => {
+          state.draft[`embalaje_${key}`] = node.value;
+          saveDraft();
+        });
+      });
+    });
   }
 
   function getRequiredHeaders(productTypeValue = '') {
@@ -966,6 +1068,17 @@ sin autorización previa y por escrito del autor.
           notFoundLabels.push(label);
           return;
         }
+
+        // Campos especiales de Embalaje
+        if (header === 'embalaje_cantidad' || header === 'embalaje_barcode') {
+          const key = header === 'embalaje_cantidad' ? 'cantidad' : 'barcode';
+          const node = document.querySelector(`[data-embalaje="${key}"]`);
+          if (node) { node.value = transformed; node.classList.add('field-autofilled'); }
+          state.draft[header] = transformed;
+          appliedHeaders.push(header);
+          return;
+        }
+
         setFieldValue(header, transformed);
         state.draft[header] = transformed;
         appliedHeaders.push(header);
@@ -1018,6 +1131,16 @@ sin autorización previa y por escrito del autor.
     saveDraft();
     updateFichaAutofillStyles();
     refreshRequiredIndicators();
+
+    // Limpiar campos de Embalaje
+    ['tipo','cantidad','barcode'].forEach(key => {
+      const node = document.querySelector(`[data-embalaje="${key}"]`);
+      if (!node) return;
+      const embKey = `embalaje_${key}`;
+      const preserved = Object.prototype.hasOwnProperty.call(preserveFields, embKey) ? preserveFields[embKey] : '';
+      node.value = preserved ?? '';
+      if (!preserved) delete state.draft[embKey]; else state.draft[embKey] = preserved;
+    });
   }
 
   function cssEscape(value) {
@@ -1379,6 +1502,14 @@ sin autorización previa y por escrito del autor.
       // no forzar error, solo dejar vacío si no hay catálogo
     }
 
+    // Guardar campos de Embalaje
+    ['tipo','cantidad','barcode'].forEach(key => {
+      const node = document.querySelector(`[data-embalaje="${key}"]`);
+      const val = node ? sanitizeText(node.value) : '';
+      visible[`embalaje_${key}`] = val;
+      technical[`embalaje_${key}`] = val;
+    });
+
     return { visible, technical };
   }
 
@@ -1404,6 +1535,15 @@ sin autorización previa y por escrito del autor.
 
     clearForm(formValues);
     switchPage('work');
+
+    // Restaurar campos de Embalaje al duplicar
+    ['tipo','cantidad','barcode'].forEach(key => {
+      const node = document.querySelector(`[data-embalaje="${key}"]`);
+      if (!node) return;
+      node.value = record.visible?.[`embalaje_${key}`] ?? '';
+      state.draft[`embalaje_${key}`] = node.value;
+    });
+    saveDraft();
 
     const formSection = document.getElementById('formSections');
     if (formSection) {
@@ -1528,6 +1668,20 @@ sin autorización previa y por escrito del autor.
       EXPORT_HEADERS.forEach(header => {
         if (header === 'Sincronizar producto') {
           row[header] = calcSincronizarProducto(record);
+        } else if (header === 'Paquetes de productos/Embalaje del producto') {
+          row[header] = record.visible?.['embalaje_tipo'] ?? '';
+        } else if (header === 'Paquetes de productos/Cantidad incluida') {
+          row[header] = record.visible?.['embalaje_cantidad'] ?? '';
+        } else if (header === 'Paquetes de productos/Código de barras') {
+          row[header] = record.visible?.['embalaje_barcode'] ?? '';
+        } else if (header === 'Paquetes de productos/Sugerido') {
+          row[header] = true;
+        } else if (header === 'Paquetes de productos/Ventas') {
+          row[header] = false;
+        } else if (header === 'Paquetes de productos/Compra') {
+          row[header] = false;
+        } else if (header === 'Paquetes de productos/Empresa/ID') {
+          row[header] = 'base.main_company';
         } else {
           row[header] = getExportValue(record, header);
         }
