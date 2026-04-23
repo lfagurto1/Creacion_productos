@@ -859,13 +859,24 @@ sin autorización previa y por escrito del autor.
   function applyProductTypeAutoFill() {
     const productTypeNode = document.querySelector(`[data-header="${cssEscape('/Product Type_NO.')}"]`);
     const tipoNode = document.querySelector(`[data-header="${cssEscape('Tipo de producto')}"]`);
-    if (!productTypeNode || !tipoNode) return;
+    const estadoNode = document.querySelector(`[data-header="${cssEscape('Estado de Producto')}"]`);
+    if (!productTypeNode) return;
     const normalized = normalizeText(productTypeNode.value);
-    const ALMACENABLE_TYPES = ['CONSUMO/HOSPITALARIOS','MEDICINA','PRODUCTOS MINIMARKET'];
     if (!normalized) return;
-    const autoValue = ALMACENABLE_TYPES.includes(normalized) ? 'Producto almacenable' : 'Servicio';
-    tipoNode.value = autoValue;
-    state.draft['Tipo de producto'] = autoValue;
+
+    if (tipoNode) {
+      const ALMACENABLE_TYPES = ['CONSUMO/HOSPITALARIOS','MEDICINA','PRODUCTOS MINIMARKET'];
+      const autoTipo = ALMACENABLE_TYPES.includes(normalized) ? 'Producto almacenable' : 'Servicio';
+      tipoNode.value = autoTipo;
+      state.draft['Tipo de producto'] = autoTipo;
+    }
+
+    if (estadoNode) {
+      const autoEstado = normalized === 'PRODUCTOS MINIMARKET' ? 'ACTIVO GENERAL' : 'PRODUCTO NUEVO';
+      estadoNode.value = autoEstado;
+      state.draft['Estado de Producto'] = autoEstado;
+    }
+
     saveDraft();
   }
 
