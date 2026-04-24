@@ -49,7 +49,7 @@ sin autorización previa y por escrito del autor.
     .scrollbar-thin::-webkit-scrollbar-thumb { background: #c6d0db; border-radius: 999px; }
     .scrollbar-thin::-webkit-scrollbar-track { background: #eef2f7; }
     .search-option[hidden] { display: none !important; }
-    .tab-btn-active { background: #49267F; color: white; border-color: #49267F; }
+    .tab-btn-active { background: #49267F; color: white; border-color: #49267F; border-radius: 0.5rem; }
     .page-hidden { display: none !important; }
     .field-autofilled {
       background: #FFF7CC !important;
@@ -64,23 +64,51 @@ sin autorización previa y por escrito del autor.
 <body class="bg-slate-100 text-slate-800">
   <div class="min-h-screen">
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 backdrop-blur">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div class="flex items-start sm:items-center gap-4">
-          <div class="w-14 h-14 rounded-2xl bg-cresioRed/10 flex items-center justify-center border border-cresioRed/20 shrink-0">
-            <div class="w-8 h-8 rounded-xl bg-cresioRed"></div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+
+        <!-- Logo + Título -->
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="w-9 h-9 rounded-xl bg-cresioRed flex items-center justify-center shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.9"/>
+              <rect x="13" y="3" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
+              <rect x="3" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.6"/>
+              <rect x="13" y="13" width="8" height="8" rx="1.5" fill="white" opacity="0.3"/>
+            </svg>
           </div>
-          <div>
-            <h1 class="text-2xl font-bold text-cresioInk">Generador de Productos</h1>
-            <p class="text-sm text-slate-500">Plantilla segura para carga masiva con catálogos e ID externos</p>
+          <div class="hidden sm:block">
+            <h1 class="text-base font-bold text-cresioInk leading-tight">Generador de Productos</h1>
+            <p class="text-xs text-slate-400 leading-tight">Carga masiva con catálogos e ID externos</p>
           </div>
+          <h1 class="text-base font-bold text-cresioInk sm:hidden">Generador</h1>
         </div>
-        <div class="flex flex-wrap gap-2 items-center">
+
+        <!-- Controles del header -->
+        <div class="flex items-center gap-2 flex-1 justify-end">
+
+          <!-- Ficha Excel -->
           <div class="flex items-center gap-2">
-            <label class="text-sm font-semibold text-slate-600 whitespace-nowrap">Ficha de creación en Excel</label>
-            <input id="fichaFile" type="file" accept=".xlsx,.xls" class="block text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-cresioRed file:text-white file:font-semibold hover:file:opacity-95" />
-            <p id="fichaStatus" class="text-xs text-slate-400 whitespace-nowrap hidden lg:block">Sin ficha</p>
+            <span class="text-xs font-medium text-slate-500 whitespace-nowrap hidden md:inline">Ficha Excel</span>
+            <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cresioRed text-white text-xs font-semibold cursor-pointer hover:opacity-90 transition whitespace-nowrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span>Cargar ficha</span>
+              <input id="fichaFile" type="file" accept=".xlsx,.xls" class="hidden" />
+            </label>
+            <p id="fichaStatus" class="text-xs text-slate-400 whitespace-nowrap hidden lg:block max-w-[200px] truncate">Sin ficha cargada</p>
           </div>
-          <button id="btnResetAll" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition">Reiniciar registros</button>
+
+          <!-- Separador -->
+          <div class="w-px h-5 bg-slate-200 hidden sm:block"></div>
+
+          <!-- Reiniciar -->
+          <button id="btnResetAll" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-semibold hover:bg-slate-50 transition whitespace-nowrap">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+            </svg>
+            <span class="hidden sm:inline">Reiniciar</span>
+          </button>
         </div>
       </div>
     </header>
@@ -88,8 +116,8 @@ sin autorización previa y por escrito del autor.
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <section class="bg-white rounded-3xl shadow-soft border border-slate-200 p-4 sm:p-5">
         <div class="flex flex-wrap gap-3">
-          <button id="tabConfig" class="tab-btn px-4 py-2 rounded-xl border border-slate-300 font-semibold transition">1. Plantilla base y Campos con ID externo</button>
-          <button id="tabWork" class="tab-btn px-4 py-2 rounded-xl border border-slate-300 font-semibold transition">2. Ingreso de productos y Registros listos para exportar</button>
+          <button id="tabConfig" class="tab-btn px-3.5 py-1.5 rounded-lg border border-slate-300 text-sm font-semibold transition">1. Plantilla base y Campos con ID externo</button>
+          <button id="tabWork" class="tab-btn px-3.5 py-1.5 rounded-lg border border-slate-300 text-sm font-semibold transition">2. Ingreso de productos y Registros listos para exportar</button>
         </div>
       </section>
 
@@ -99,7 +127,7 @@ sin autorización previa y por escrito del autor.
           <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
             <div>
               <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cresioBlue text-cresioInk text-xs font-bold tracking-wide uppercase">Configuración</div>
-              <h2 class="mt-3 text-xl font-bold text-cresioInk">1. Plantilla base</h2>
+              <h2 class="mt-2 text-base font-bold text-cresioInk">1. Plantilla base</h2>
               <p class="text-sm text-slate-500 mt-1">La app ya viene precargada con la estructura de tu plantilla actual. Si en el futuro cambia, puedes volver a subir el Excel para reemplazar la estructura.</p>
             </div>
             <div class="min-w-[260px]">
@@ -135,16 +163,16 @@ sin autorización previa y por escrito del autor.
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cresioBlue text-cresioInk text-xs font-bold tracking-wide uppercase">Catálogos</div>
-            <h2 class="mt-3 text-xl font-bold text-cresioInk">2. Campos con ID externo</h2>
+            <h2 class="mt-2 text-base font-bold text-cresioInk">2. Campos con ID externo</h2>
             <p class="text-sm text-slate-500 mt-1">Aquí subes una sola vez los Excel que contienen la equivalencia <strong>Nombre visible → ID externo</strong>. Quedan guardados en este navegador y cuando subas una actualización se fusionan sin borrar lo anterior. En <strong>Categoría del producto</strong> también se toma automáticamente la categoría POS y su ID externo desde el mismo archivo.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button id="btnExportConfig" class="px-4 py-2 rounded-xl border border-cresioViolet text-cresioViolet font-semibold hover:bg-cresioViolet/5 transition">Exportar respaldo</button>
-            <label class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition cursor-pointer">
+            <button id="btnExportConfig" class="px-3.5 py-1.5 rounded-lg border border-cresioViolet text-cresioViolet text-sm font-semibold hover:bg-cresioViolet/5 transition">Exportar respaldo</button>
+            <label class="px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition cursor-pointer">
               Importar respaldo
               <input id="backupFile" type="file" accept=".json" class="hidden" />
             </label>
-            <button id="btnClearCatalogs" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition">Borrar catálogos</button>
+            <button id="btnClearCatalogs" class="px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition">Borrar catálogos</button>
           </div>
         </div>
 
@@ -158,16 +186,16 @@ sin autorización previa y por escrito del autor.
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cresioBlue text-cresioInk text-xs font-bold tracking-wide uppercase">Formulario</div>
-            <h2 class="mt-3 text-xl font-bold text-cresioInk">3. Ingreso de productos</h2>
-            <p class="text-sm text-slate-500 mt-1">Los campos fijos y automáticos se completan solos. Solo llenas lo necesario.</p>
+            <h2 class="mt-2 text-base font-bold text-cresioInk">3. Ingreso de productos</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Los campos fijos y automáticos se completan solos. Solo llenas lo necesario.</p>
           </div>
         </div>
 
         <div id="formSections" class="mt-6 space-y-6"></div>
 
         <div class="mt-6 pt-5 border-t border-slate-200 flex flex-wrap justify-end gap-2">
-          <button id="btnClearForm" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition">Limpiar formulario</button>
-          <button id="btnAddRow" class="px-4 py-2 rounded-xl bg-cresioRed text-white font-semibold hover:opacity-95 transition">Agregar producto</button>
+          <button id="btnClearForm" class="px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition">Limpiar formulario</button>
+          <button id="btnAddRow" class="px-3.5 py-1.5 rounded-lg bg-cresioRed text-white text-sm font-semibold hover:opacity-95 transition">Agregar producto</button>
         </div>
       </section>
 
@@ -175,12 +203,12 @@ sin autorización previa y por escrito del autor.
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cresioBlue text-cresioInk text-xs font-bold tracking-wide uppercase">Vista previa</div>
-            <h2 class="mt-3 text-xl font-bold text-cresioInk">4. Registros listos para exportar</h2>
+            <h2 class="mt-2 text-base font-bold text-cresioInk">4. Registros listos para exportar</h2>
             <p class="text-sm text-slate-500 mt-1">Puedes revisar la versión visible y la versión técnica con IDs externos.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button id="btnExport" class="px-4 py-2 rounded-xl bg-cresioViolet text-white font-semibold hover:opacity-95 transition">Descargar Excel</button>
-            <button id="btnToggleTech" class="px-4 py-2 rounded-xl border border-cresioViolet text-cresioViolet font-semibold hover:bg-cresioViolet/5 transition">Ver columnas técnicas</button>
+            <button id="btnExport" class="px-3.5 py-1.5 rounded-lg bg-cresioViolet text-white text-sm font-semibold hover:opacity-95 transition">Descargar Excel</button>
+            <button id="btnToggleTech" class="px-3.5 py-1.5 rounded-lg border border-cresioViolet text-cresioViolet text-sm font-semibold hover:bg-cresioViolet/5 transition">Ver columnas técnicas</button>
           </div>
         </div>
 
